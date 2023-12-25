@@ -37,10 +37,11 @@ class ControllerFabricaAndProduccion{
     controllerFabricaAndProduccion(){
         p.produccion=0;
         f.fabricas=[]
+        const letter=['A','B','C','D','E','F']
         for( let i=1; i<Number(cantFabricas)+1;i++){
             if(validation.validateNumberPositive(Number(document.getElementById('fab'+i).value))===null)return
             p.calculateProduccionTotal(Number(document.getElementById('fab'+i).value));
-            f.addFabricaToList(new fabrica(i,Number(document.getElementById('fab'+i).value)))
+            f.addFabricaToList(new fabrica(letter[i-1],Number(document.getElementById('fab'+i).value)))
         }
         changeModalFab.changeModalFabricasToBodegas()
     }
@@ -82,6 +83,7 @@ class ChangeModalFabricasToBodegas{
 
 class ControllerBodegaAndAlmacenamiento{
     ControllerBodegaAndAlmacenamiento(){
+        
         a.almacenamiento=0;
         b.bodegas=[]
         for( let i=1; i<Number(cantBodegas)+1;i++){
@@ -115,7 +117,6 @@ class bodega{
     constructor(id,value){
         this.id=id;
         this.value=value
-        
     }
 }
 class fabrica{
@@ -124,16 +125,44 @@ class fabrica{
         this.value=value
     }
 }
+class asignacion{
+    letra_fabrica;
+    num_bodega;
+    cantidad;
+    constructor(){
+    }
+}
+class AsignacionesTotales{
+    asignaciones=[]
+    addAsignacionToList(asignacion){
+        this.asignaciones.push(asignacion);
+    }
+}
+
+class costo{
+    letra_fabrica;
+    num_bodega;
+    monto;
+    constructor(){
+    }
+}
+class CostosTotales{
+    montos=[]
+    addCostosToList(monto){
+        this.montos.push(monto);
+    }
+}
+
 
 class EntidadImaginaria{
     addEntidadImaginaria(){
         if (p.produccion>a.almacenamiento){
             cantBodegas++
-            b.addBodegaToList(new bodega('imaginaria',p.produccion-a.almacenamiento))
+            b.addBodegaToList(new bodega('IM',p.produccion-a.almacenamiento))
     
         }else if(p.produccion<a.almacenamiento){
             cantFabricas++
-            f.addFabricaToList(new fabrica('imaginaria',a.almacenamiento-p.produccion))
+            f.addFabricaToList(new fabrica('IM',a.almacenamiento-p.produccion))
         }
     }
 }
@@ -147,7 +176,8 @@ const b= new BodegasTotales();
 const a=new AlmacenamientoTotal();
 const controllerBA=new ControllerBodegaAndAlmacenamiento()
 const entidadImaginaria=new EntidadImaginaria();
-
+const asig=new AsignacionesTotales();
+const cost=new CostosTotales();
 
 class Controller{
     constructor(controller){
@@ -267,22 +297,53 @@ var cantInput=0;
 var costoTotal=0;
 
 const calculateTotalCosto=()=>{
-    console.log(idMetodo)
     costoTotal=0;
         for(let u=1;u<Number(cantInput+1);u++){
             if((document.getElementById('inputCost'+u))!=null){
                 costoTotal=costoTotal+Number(document.getElementById('inputCost'+u).value)
-
+                
             }
         }
-        
 }
 
-var bodegas=[]
-const getvalueBodega=()=>{
-
+const CalculateAsignacion=()=>{
+    asig.asignaciones=[]
+    let x=1
+        for(let u=0;u<Number(cantBodegas);u++){
+            
+            let idBodega=b.bodegas[u].id;
+   
+             for(let i=0; i<Number(cantFabricas);i++){
+              
+                asignacionToList= new asignacion();
+                asignacionToList.num_bodega=idBodega;
+                asignacionToList.letra_fabrica=f.fabricas[i].id;
+                asignacionToList.cantidad=Number(document.getElementById('inputCant'+x).value);
+                asig.addAsignacionToList(asignacionToList)
+                x++
+            }
+        }
 }
+const CalculateCosto=()=>{
+    cost.montos=[]
+    let x=1
+        for(let u=0;u<Number(cantBodegas);u++){
+            
+            let idBodega=b.bodegas[u].id;
+   
+             for(let i=0; i<Number(cantFabricas);i++){
+                costoToList= new costo();
+                costoToList.num_bodega=idBodega;
+                costoToList.letra_fabrica=f.fabricas[i].id;
+                costoToList.monto=Number(document.getElementById('inputCost'+x).value);
+                cost.addCostosToList(costoToList)
+                x++
+            }
+        }
+}
+
 const getData=()=>{
+    calculateTotalCosto();
     console.log('Datos Tabla Problema')
     console.log('cantidad de fabricas: '+cantFabricas);
     console.log('cantidad de bodegas:' +cantBodegas);
@@ -293,9 +354,13 @@ const getData=()=>{
     console.log('Costo Total:'+costoTotal)
     console.log('--------------------------')
     console.log('Tabla bodega -- lista ')
-    console.log(bodegas)
+    console.log(b.bodegas)
     console.log('Tabla Fabrica -- lista ')
-    console.log()
+    console.log(f.fabricas)
+    CalculateAsignacion();
+    CalculateCosto();
+    console.log(asig.asignaciones)
+    console.log(cost.montos)
 }
 
 
@@ -312,7 +377,8 @@ function emparejar(){
     btnSave.className='btn btnVoguel'
     btnSave.innerText='Guardar'
     btnSave.addEventListener('click',()=>{
-        calculateTotalCosto()
+        getData()
+
     })
     btnLoad.className='btn btnMc'
     btnLoad.innerText='Cargar'
@@ -347,7 +413,7 @@ function emparejar(){
 
     for(let i=1;i<Number(cantFabricas)+1;i++){
         const headFab=document.createElement('th');
-        headFab.innerText='Fabrica '+(f.fabricas[i-1].id)
+        headFab.innerText='Fábrica '+(f.fabricas[i-1].id)
         headsFabricas.appendChild(headFab)
     }
 
@@ -377,6 +443,7 @@ function emparejar(){
         for(let u=0;u<Number(cantFabricas);u++){
 
             const td=document.createElement('td')
+            td.id='td'+amount
             td.className='tdInput'
             const inputCosto=document.createElement('input')
             inputCosto.className='input cost'
@@ -434,7 +501,7 @@ function emparejar(){
 }
 
 function Inputs(amount,id,entity,container){
-    for (var i=1; i<Number(amount)+1;i++){
+    for (let i=1; i<Number(amount)+1;i++){
         var div=document.createElement('div')
         const label=document.createElement('h5');
         label.innerText=entity+' n '+i;
